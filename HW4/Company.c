@@ -82,18 +82,18 @@ int		addFlight(Company* pComp, const AirportManager* pManager)
 	return 1;
 }
 
-void	printCompany(Company* pComp, char* word, ...) //check
+void	printCompany(const Company* pComp,  ...) //check
 {
-	if (word == NULL)
+	if (pComp == NULL)
 	{
 		printf("Error reading company");
 		return;
 	}
 
 	va_list   strings;
-	va_start(strings, word);
+	va_start(strings, pComp);
 
-	pComp->name = (char*)realloc(pComp->name, strlen(word) + strlen(pComp->name) + 3);
+	/*pComp->name = (char*)realloc(pComp->name, strlen(word) + strlen(pComp->name) + 3);
 	if (!pComp->name)
 		return;
 	strcat(pComp->name, "_");
@@ -108,7 +108,7 @@ void	printCompany(Company* pComp, char* word, ...) //check
 		strcat(pComp->name, "_");
 		strcat(pComp->name, check);
 		check = va_arg(strings, char*);
-	}
+	}*/
 	va_end(strings);
 #ifdef DETAIL_PRINT
 	printf("Company %s:\n", pComp->name);

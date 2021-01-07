@@ -27,7 +27,7 @@ void	initDateList(Company* pComp);
 int		isUniqueDate(const Company* pComp, int index);
 int		addFlight(Company* pComp, const AirportManager* pManager);
 
-void	printCompany(Company* pComp, char* word, ...);
+void	printCompany(const Company* pComp,  ...);
 void	printFlightsCount(const Company* pComp);
 
 int		saveCompanyToFile(const Company* pComp, const char* fileName);
