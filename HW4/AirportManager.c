@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+#include "myMacros.h"
 #include "AirportManager.h"
 
 
@@ -42,8 +42,7 @@ int	initManager(AirportManager* pManager, const char* fileName)
 int	addAirport(AirportManager* pManager)
 {
 	Airport* pPort = createAirport(pManager);
-	if (!pPort)
-		return 0;
+	CHECK_RETURN_0(pPort);
 
 	insertPortToListSorted(&pManager->airportList, pPort);
 	pManager->count++;
@@ -70,8 +69,7 @@ void insertPortToListSorted(LIST* airportList, Airport* pPort)
 Airport*  createAirport(AirportManager* pManager)
 {
 	Airport* pPort = (Airport*)calloc(1, sizeof(Airport));
-	if (!pPort)
-		return NULL;
+	CHECK_RETURN_NULL(pPort);
 
 	while (1)
 	{
@@ -123,23 +121,14 @@ int		saveManagerToFile(const AirportManager* pManager, const char* fileName)
 	FILE* fp;
 
 	fp = fopen(fileName, "w");
-	if (!fp) {
-		printf("Error open airport manager file to write\n");
-		return 0;
-	}
-
+	CHECK_NULL__MSG_COLSE_FILE(fp, Error open airport manager file to write\n);
+	
 	fprintf(fp, "%d\n", pManager->count);
 	NODE* pNode = pManager->airportList.head.next;
 	while (pNode)
 	{
 
-		//CHECK_0_MSG_COLSE_FILE(saveAirportToFile(pNode->key, fp), "Error write airport\n", fp);
-		if (!saveAirportToFile(pNode->key, fp))
-		{
-			printf("Error write airport\n");
-			fclose(fp);
-			return 0;
-		}
+		CHECK_0_MSG_COLSE_FILE(saveAirportToFile(pNode->key, fp), Error write airport\n, fp);
 		pNode = pNode->next;
 	}
 	fclose(fp);
@@ -152,11 +141,7 @@ int		loadManagerFromFile(AirportManager* pManager, const char* fileName)
 	FILE* fp;
 
 	fp = fopen(fileName, "r");
-	if (!fp)
-	{
-		printf("Error open airport manager file\n");
-		return 0;
-	}
+	CHECK_NULL__MSG_COLSE_FILE(fp, Error open airport manager file\n);
 
 	fscanf(fp, "%d", &pManager->count);
 
@@ -164,8 +149,7 @@ int		loadManagerFromFile(AirportManager* pManager, const char* fileName)
 	for (int i = 0; i < pManager->count; i++)
 	{
 		pPort = (Airport*)malloc(sizeof(Airport));
-		if (!pPort)
-			return 0;
+		CHECK_RETURN_0(pPort);
 
 		if (!loadAirportFromFile(pPort, fp))
 		{

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include "myMacros.h"
 #include "fileHelper.h"
 #include "General.h"
 
@@ -71,9 +71,8 @@ int	 readCharsFromFile(char* arr, int length, FILE* fp, const char* msg)
 {
 	if (fread(arr, sizeof(char), length, fp) != length)
 	{
-		puts(msg);
-		fclose(fp);
-		return 0;
+		
+		MSG_CLOSE_RETURN_0(fp, msg);
 	}
 	return 1;
 }
@@ -82,9 +81,7 @@ int	  readIntFromFile(int* pVal, FILE* fp, const char* msg)
 {
 	if (fread(pVal, sizeof(int), 1, fp) != 1)
 	{
-		puts(msg);
-		fclose(fp);
-		return 0;
+		MSG_CLOSE_RETURN_0(fp, msg);
 	}
 	return 1;
 

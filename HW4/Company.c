@@ -7,6 +7,7 @@
 #include "Airport.h"
 #include "General.h"
 #include "fileHelper.h"
+#include "myMacros.h"
 
 static const char* sortOptStr[eNofSortOpt] = {
 	"None","Hour", "Date", "Airport takeoff code", "Airport landing code" };
@@ -16,21 +17,17 @@ int	initCompanyFromFile(Company* pComp, AirportManager* pManaer, const char* fil
 {
 #ifdef COMPRESSION
 	FILE* bFile = fopen(fileName,"rb");
-	if (!bFile)
-		return 0;
+	CHECK_MSG_RETURN_0(bFile, error loading\n);
+		
 	unsigned char buffer[10];
 	fread(buffer, sizeof(char), 2, bFile);
 	pComp->flightCount = (buffer[0]<<1) | (buffer[1] >> 7);
-	printf("%d\n", pComp->flightCount);
 	pComp->sortOpt = (buffer[1] >>4) & 0x7;
-	printf("%d\n", pComp->sortOpt);
 	int nameLen = buffer[1] & 0xF;
-	printf("%d\n", nameLen);
 	pComp->name = (char*)malloc(nameLen);
 	if (!pComp->name)
 		return 0;
 	fread(pComp->name, sizeof(char), nameLen, bFile);
-	printf("%s\n", pComp->name);
 	pComp->flightArr = (Flight**)malloc(pComp->flightCount * sizeof(Flight*));
 	if (!pComp->flightArr)
 		return 0;
@@ -45,22 +42,16 @@ int	initCompanyFromFile(Company* pComp, AirportManager* pManaer, const char* fil
 			pComp->flightArr[i]->originCode[j] = buffer[j];
 			pComp->flightArr[i]->destCode[j] = buffer[j+3];
 		}
-		printf("%s\n", pComp->flightArr[i]->originCode);
-		printf("%s\n", pComp->flightArr[i]->destCode);
 		pComp->flightArr[i]->date.year = (buffer[6]) << 10;
 		pComp->flightArr[i]->date.year = pComp->flightArr[i]->date.year | (buffer[7]) << 2;
 		pComp->flightArr[i]->date.year = pComp->flightArr[i]->date.year | (buffer[8] >> 6);
-		printf("%d\n", pComp->flightArr[i]->date.year);
 		pComp->flightArr[i]->date.month = (buffer[8] >> 2) & 0xF;
-		printf("%d\n", pComp->flightArr[i]->date.month);
 		pComp->flightArr[i]->date.day = (buffer[8] & 0x3)<<3 | (buffer[9] >> 5);
-		printf("%d\n", pComp->flightArr[i]->date.day);
 		pComp->flightArr[i]->hour = buffer[9] & 0x1F;
-		printf("%d\n", pComp->flightArr[i]->hour);
-
+	
 	}
-
-
+	L_init(&pComp->flighDateList);
+	initDateList(pComp);
 	return 1;
 #else
 	L_init(&pComp->flighDateList);
@@ -132,7 +123,7 @@ int		addFlight(Company* pComp, const AirportManager* pManager)
 	return 1;
 }
 
-void	printCompany(const Company* pComp,  ...) //check
+void	printCompany(const Company* pComp,  ...) 
 {
 	if (pComp == NULL)
 	{
@@ -142,33 +133,23 @@ void	printCompany(const Company* pComp,  ...) //check
 
 	va_list   strings;
 	va_start(strings, pComp);
+	printf("Company %s", pComp->name);
+	char* temp = va_arg(strings, char*);
 
-	/*pComp->name = (char*)realloc(pComp->name, strlen(word) + strlen(pComp->name) + 3);
-	if (!pComp->name)
-		return;
-	strcat(pComp->name, "_");
-
-	char* check = va_arg(strings, char*);
-	strcat(pComp->name, word);
-
-	while (check != NULL)
+	while (temp != NULL)
 	{
-		pComp->name = (char*)realloc(pComp->name, (strlen(pComp->name) + strlen(check) + 3));
-		if (!pComp->name)
-			return;
-		strcat(pComp->name, "_");
-		strcat(pComp->name, check);
-		check = va_arg(strings, char*);
-	}*/
+		printf("_%s", temp);
+		temp = va_arg(strings, char*);
+	}
 	va_end(strings);
+	printf(" ");
+
 #ifdef DETAIL_PRINT
-	printf("Company %s:\n", pComp->name);
 	printf("Has %d flights\n", pComp->flightCount);
 	generalArrayFunction((void*)pComp->flightArr, pComp->flightCount, sizeof(Flight**), printFlightV);
 	printf("\nFlight Date List:");
 	L_print(&pComp->flighDateList, printStr);
 #else
-	printf("Company %s:\n", pComp->name);
 	printf("Has %d flights\n", pComp->flightCount);
 #endif
 }
@@ -198,17 +179,7 @@ void	printFlightsCount(const Company* pComp)
 	printf("from %s to %s\n", codeOrigin, codeDestination);
 }
 
-unsigned int createMask(int left, int right)
-{
-	int temp;
-	if (left < right)
-	{
-		temp = left;
-		left = right;
-		right = temp;
-	}
-	return (1 << (left + 1)) - (1 << right);
-}
+
 
 int		saveCompanyToFile(const Company* pComp, const char* fileName)
 {
@@ -244,20 +215,13 @@ int		saveCompanyToFile(const Company* pComp, const char* fileName)
 	
 	free(data);
 	fclose(bFile);
-	/*unsigned int mask = createMask(7, 0);
-	mask = mask | pComp->flightCount;
-	data[size - 1] = data[size - 1] | mask;
-	mask = createMask(8, 8);
-	mask = mask | pComp->flightCount;
-	data[size - 2] = data[size - 2] | mask;
-	data<<*/
+	return 1;
+	
 #else
 	FILE* fp;
 	fp = fopen(fileName, "wb");
-	if (!fp) {
-		printf("Error open copmpany file to write\n");
-		return 0;
-	}
+	CHECK_NULL__MSG_COLSE_FILE(fp, Error open copmpany file to write\n);
+
 
 	if (!writeStringToFile(pComp->name, fp, "Error write comapny name\n"))
 		return 0;
@@ -285,18 +249,16 @@ int loadCompanyFromFile(Company* pComp, const AirportManager* pManager, const ch
 {
 	FILE* fp;
 	fp = fopen(fileName, "rb");
-	if (!fp)
-	{
-		printf("Error open company file\n");
-		return 0;
-	}
+
+	CHECK_NULL__MSG_COLSE_FILE(fp, Error open company file\n);
+
 
 	pComp->flightArr = NULL;
 
 
 	pComp->name = readStringFromFile(fp, "Error reading company name\n");
-	if (!pComp->name)
-		return 0;
+	CHECK_RETURN_0(pComp->name);
+	
 
 	if (!readIntFromFile(&pComp->flightCount, fp, "Error reading flight count name\n"))
 		return 0;
@@ -312,9 +274,7 @@ int loadCompanyFromFile(Company* pComp, const AirportManager* pManager, const ch
 		pComp->flightArr = (Flight**)malloc(pComp->flightCount * sizeof(Flight*));
 		if (!pComp->flightArr)
 		{
-			printf("Alocation error\n");
-			fclose(fp);
-			return 0;
+			MSG_CLOSE_RETURN_0(fp, Alocation error\n);
 		}
 	}
 	else
@@ -325,9 +285,7 @@ int loadCompanyFromFile(Company* pComp, const AirportManager* pManager, const ch
 		pComp->flightArr[i] = (Flight*)calloc(1, sizeof(Flight));
 		if (!pComp->flightArr[i])
 		{
-			printf("Alocation error\n");
-			fclose(fp);
-			return 0;
+			MSG_CLOSE_RETURN_0(fp, Alocation error\n);
 		}
 		if (!loadFlightFromFile(pComp->flightArr[i], pManager, fp))
 			return 0;

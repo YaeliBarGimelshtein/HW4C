@@ -1,10 +1,12 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
+#include "myMacros.h"
 #include "Company.h"
 #include "AirportManager.h"
 #include "General.h"
 #include "main.h"
+
 
 const char* str[eNofOptions] = { "Add Flight", "Add Airport",
 "PrintCompany", "Print all Airports",

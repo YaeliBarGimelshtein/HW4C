@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "GeneralList.h"
+#include "myMacros.h"
 
 
 //////////////////////////////////////////
@@ -34,9 +35,7 @@ BOOL L_init(LIST* pList)
 NODE* L_insert(NODE* pNode, DATA Value)
 {
 	NODE* tmp;
-
-	if (!pNode)
-		return NULL;
+	CHECK_RETURN_NULL(pNode);
 
 	tmp = (NODE*)malloc(sizeof(NODE));	// new node
 
