@@ -14,12 +14,62 @@ static const char* sortOptStr[eNofSortOpt] = {
 
 int	initCompanyFromFile(Company* pComp, AirportManager* pManaer, const char* fileName)
 {
+#ifdef COMPRESSION
+	FILE* bFile = fopen(fileName,"rb");
+	if (!bFile)
+		return 0;
+	unsigned char buffer[10];
+	fread(buffer, sizeof(char), 2, bFile);
+	pComp->flightCount = (buffer[0]<<1) | (buffer[1] >> 7);
+	printf("%d\n", pComp->flightCount);
+	pComp->sortOpt = (buffer[1] >>4) & 0x7;
+	printf("%d\n", pComp->sortOpt);
+	int nameLen = buffer[1] & 0xF;
+	printf("%d\n", nameLen);
+	pComp->name = (char*)malloc(nameLen);
+	if (!pComp->name)
+		return 0;
+	fread(pComp->name, sizeof(char), nameLen, bFile);
+	printf("%s\n", pComp->name);
+	pComp->flightArr = (Flight**)malloc(pComp->flightCount * sizeof(Flight*));
+	if (!pComp->flightArr)
+		return 0;
+	for (int i = 0; i < pComp->flightCount; i++)
+	{
+		pComp->flightArr[i] = (Flight*)calloc(1, sizeof(Flight));
+		if (!pComp->flightArr[i])
+			return 0;
+		fread(buffer, sizeof(char), 10, bFile);
+		for (int j = 0; j < CODE_LENGTH; j++)
+		{
+			pComp->flightArr[i]->originCode[j] = buffer[j];
+			pComp->flightArr[i]->destCode[j] = buffer[j+3];
+		}
+		printf("%s\n", pComp->flightArr[i]->originCode);
+		printf("%s\n", pComp->flightArr[i]->destCode);
+		pComp->flightArr[i]->date.year = (buffer[6]) << 10;
+		pComp->flightArr[i]->date.year = pComp->flightArr[i]->date.year | (buffer[7]) << 2;
+		pComp->flightArr[i]->date.year = pComp->flightArr[i]->date.year | (buffer[8] >> 6);
+		printf("%d\n", pComp->flightArr[i]->date.year);
+		pComp->flightArr[i]->date.month = (buffer[8] >> 2) & 0xF;
+		printf("%d\n", pComp->flightArr[i]->date.month);
+		pComp->flightArr[i]->date.day = (buffer[8] & 0x3)<<3 | (buffer[9] >> 5);
+		printf("%d\n", pComp->flightArr[i]->date.day);
+		pComp->flightArr[i]->hour = buffer[9] & 0x1F;
+		printf("%d\n", pComp->flightArr[i]->hour);
+
+	}
+
+
+	return 1;
+#else
 	L_init(&pComp->flighDateList);
 	if (loadCompanyFromFile(pComp, pManaer, fileName))
 	{
 		initDateList(pComp);
 		return 1;
 	}
+#endif // COMPRESSION
 	return 0;
 }
 
@@ -97,9 +147,10 @@ void	printCompany(const Company* pComp,  ...) //check
 	if (!pComp->name)
 		return;
 	strcat(pComp->name, "_");
-	strcat(pComp->name, word);
 
 	char* check = va_arg(strings, char*);
+	strcat(pComp->name, word);
+
 	while (check != NULL)
 	{
 		pComp->name = (char*)realloc(pComp->name, (strlen(pComp->name) + strlen(check) + 3));
@@ -165,8 +216,34 @@ int		saveCompanyToFile(const Company* pComp, const char* fileName)
 	int size = 2 + strlen(pComp->name) + 1;
 	int nameSize = strlen(pComp->name) + 1;
 	unsigned char* data = (unsigned char*)calloc(sizeof(unsigned char), size);
-	data[0] = pComp->flightCount >> 1;
-	data[1] = pComp->flightCount << 7 | pComp->sortOpt << 4 | nameSize;
+	data[0] = (pComp->flightCount >> 1);
+	data[1] = (pComp->flightCount << 7) | (pComp->sortOpt << 4) | (nameSize);
+	for (int i = 2; i < size; i++)
+	{
+		data[i] = pComp->name[i-2];
+	}
+	FILE* bFile=fopen(fileName,"wb");
+	if (!bFile)
+		return 0;
+	fwrite(data, sizeof(char), size, bFile);
+
+	data = (char*)realloc(data, 10);
+	for (int i = 0; i < pComp->flightCount; i++)
+	{
+		for (int j = 0; j < CODE_LENGTH; j++)
+			{
+			data[j] = pComp->flightArr[i]->originCode[j];
+			data[j+3] = pComp->flightArr[i]->destCode[j];
+			}
+		data[6] = pComp->flightArr[i]->date.year >> 10;
+		data[7] = (pComp->flightArr[i]->date.year >> 2)&0xFF;
+		data[8] = (pComp->flightArr[i]->date.year & 0x3) << 6 | (pComp->flightArr[i]->date.month << 2) | (pComp->flightArr[i]->date.day >> 3);
+		data[9] = (pComp->flightArr[i]->date.day << 5) | (pComp->flightArr[i]->hour);
+		fwrite(data, sizeof(char), 10, bFile);
+	}
+	
+	free(data);
+	fclose(bFile);
 	/*unsigned int mask = createMask(7, 0);
 	mask = mask | pComp->flightCount;
 	data[size - 1] = data[size - 1] | mask;

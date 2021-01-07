@@ -6,7 +6,7 @@
 #include "GeneralList.h"
 
 #define DETAIL_PRINT
-//#define COMPRESSION
+#define COMPRESSION
 
 typedef enum { eNone, eHour, eDate, eSorceCode, eDestCode, eNofSortOpt } eSortOption;
 static const char* sortOptStr[eNofSortOpt];
