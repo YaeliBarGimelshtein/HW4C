@@ -121,7 +121,7 @@ int		saveManagerToFile(const AirportManager* pManager, const char* fileName)
 	FILE* fp;
 
 	fp = fopen(fileName, "w");
-	CHECK_NULL__MSG_COLSE_FILE(fp, Error open airport manager file to write\n);
+	CHECK_MSG_RETURN_0(fp, Error open airport manager file to write\n);
 	
 	fprintf(fp, "%d\n", pManager->count);
 	NODE* pNode = pManager->airportList.head.next;
@@ -141,7 +141,7 @@ int		loadManagerFromFile(AirportManager* pManager, const char* fileName)
 	FILE* fp;
 
 	fp = fopen(fileName, "r");
-	CHECK_NULL__MSG_COLSE_FILE(fp, Error open airport manager file\n);
+	CHECK_MSG_RETURN_0(fp, Error open airport manager file\n);
 
 	fscanf(fp, "%d", &pManager->count);
 

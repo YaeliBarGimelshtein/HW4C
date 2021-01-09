@@ -29,17 +29,17 @@
 	}\
 }
 
-#define CHECK_NULL__MSG_COLSE_FILE(a,str){\
+#define CHECK_NULL__MSG_COLSE_FILE(a,str,fp){\
 	if((a)==NULL){\
 		printf(#str "\n");\
-		fclose(a);\
+		fclose(fp);\
 		return 0;\
 	}\
 }
 
-#define MSG_CLOSE_RETURN_0(a,str){\
+#define MSG_CLOSE_RETURN_0(fp,str){\
 	printf(#str "\n");\
-	fclose(a);\
+	fclose(fp);\
 	return 0;\
 }
 
